@@ -1,0 +1,19 @@
+on:
+  schedules:
+  - cron: '*/15 * * * *'
+name: Monitor Schedule
+jobs:
+  monitorPullRequests:
+    name: Monitor Pull Requests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Monitor Pull Requests
+      uses: ./
+      env:
+        CONFLICT_ISSUE_STATUS: ${{ secrets.CONFLICT_ISSUE_STATUS }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        JIRA_HOST: ${{ secrets.JIRA_HOST }}
+        JIRA_PROJECT_NAME: ${{ secrets.JIRA_PROJECT_NAME }}
+        JIRA_USER: ${{ secrets.JIRA_USER }}
