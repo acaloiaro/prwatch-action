@@ -6,7 +6,7 @@ Current features
 * Transition Jira cards associated with in-conflict pull requests to a new status defined by `CONFLICT_ISSUE_STATUS`
 * Comment on transitioned cards to let assignees know that their cards have been "pushed back" due to PR conflict
 
-# Configuration
+# Usage
 
 Note: While it is tempting to run this action on "push" to your master branch, doing so will be quite ineffective. The
 reason for that is because, immediately following a merge to "master", it is impossible to determine the mergability of the
@@ -14,7 +14,7 @@ pull requests against it.
 
 For that reason, it's better to run on a schedule.
 
-## Every 15 minutes
+## Example: every 15 minutes
 ```yaml
 ---
 'on':
