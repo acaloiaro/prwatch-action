@@ -13,19 +13,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// GithubClient wraps the v4 graphql client to provide a higher level API
-type GithubClient struct {
-	v4Client *githubv4.Client
-	ctx      context.Context
-}
-
 const defaultPageSize = 100
 
 type actor struct {
 	Login githubv4.String
 }
 
-type githubPullRequest struct {
+type GithubPullRequest struct {
 	Number    githubv4.Int
 	Title     githubv4.String
 	BodyText  githubv4.String
@@ -50,48 +44,18 @@ type pageInfo struct {
 }
 
 type pullRequests struct {
-	Nodes    []githubPullRequest
+	Nodes    []GithubPullRequest
 	PageInfo pageInfo
 }
 
-func NewClient() (client *GithubClient) {
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
-	)
-
-	ctx := context.Background()
-	return &GithubClient{
-		v4Client: githubv4.NewClient(oauth2.NewClient(ctx, src)),
-		ctx:      ctx,
-	}
+type pullRequestQuery struct {
+	Repository struct {
+		PullRequests pullRequests `graphql:"pullRequests(states: [OPEN], first: $pageSize, orderBy: {field: UPDATED_AT, direction: ASC}, after: $pullsCursor)"`
+	} `graphql:"repository(owner: $owner, name: $repository)"`
 }
 
-func ListPulls(client *GithubClient) (pulls []githubPullRequest, err error) {
-	pulls, err = fetchPulls(client)
-
-	return
-}
-
-// HasConclift determines whether a pull request has a merge conflict
-func HasConflict(pr githubPullRequest) bool {
-	return pr.Mergeable == "CONFLICTING"
-}
-
-func IssueID(pr githubPullRequest) (issueID string, ok bool) {
-	if len(string(pr.BodyText)) == 0 {
-		ok = false
-		return
-	}
-
-	// TODO: Use an environment variables for the project-issue pattern
-	re := regexp.MustCompile(fmt.Sprintf("%s-\\d*", os.Getenv("JIRA_PROJECT_NAME")))
-	issueID = re.FindString(string(pr.BodyText))
-	ok = issueID != ""
-	return
-}
-
-func fetchPulls(client *GithubClient) (pulls []githubPullRequest, err error) {
-
+// ListPulls lists all open pulls requests for the current repository
+func ListPulls(client GithubQueryer) (pulls []GithubPullRequest, err error) {
 	o, repository, err := repositoryDetails()
 	if err != nil {
 		return
@@ -104,12 +68,7 @@ func fetchPulls(client *GithubClient) (pulls []githubPullRequest, err error) {
 		"pageSize":    githubv4.Int(defaultPageSize),
 	}
 
-	var query struct {
-		Repository struct {
-			PullRequests pullRequests `graphql:"pullRequests(states: [OPEN], first: $pageSize, orderBy: {field: UPDATED_AT, direction: ASC}, after: $pullsCursor)"`
-		} `graphql:"repository(owner: $owner, name: $repository)"`
-	}
-
+	var query pullRequestQuery
 	for {
 
 		err = client.Query(&query, variables)
@@ -129,6 +88,24 @@ func fetchPulls(client *GithubClient) (pulls []githubPullRequest, err error) {
 	return
 }
 
+// HasConclift determines whether a pull request has a merge conflict
+func HasConflict(pr GithubPullRequest) bool {
+	return pr.Mergeable == "CONFLICTING"
+}
+
+func IssueID(pr GithubPullRequest) (issueID string, ok bool) {
+	if len(string(pr.BodyText)) == 0 {
+		ok = false
+		return
+	}
+
+	// TODO: Use an environment variables for the project-issue pattern
+	re := regexp.MustCompile(fmt.Sprintf("%s-\\d*", os.Getenv("JIRA_PROJECT_NAME")))
+	issueID = re.FindString(string(pr.BodyText))
+	ok = issueID != ""
+	return
+}
+
 func repositoryDetails() (owner, repository string, err error) {
 	repoDetails := os.Getenv("GITHUB_REPOSITORY")
 	details := strings.Split(repoDetails, "/")
@@ -144,6 +121,30 @@ func repositoryDetails() (owner, repository string, err error) {
 	return
 }
 
-func (c *GithubClient) Query(query interface{}, variables map[string]interface{}) error {
+// GithubQueryer is an interface for performing github v4 graphql queries
+type GithubQueryer interface {
+	Query(query interface{}, variables map[string]interface{}) error
+}
+
+type githubClient struct {
+	v4Client *githubv4.Client
+	ctx      context.Context
+}
+
+// NewClient creates a new Github client
+func NewClient() (client GithubQueryer) {
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+	)
+
+	ctx := context.Background()
+	return &githubClient{
+		v4Client: githubv4.NewClient(oauth2.NewClient(ctx, src)),
+		ctx:      ctx,
+	}
+}
+
+// Query queries the github v4 graphql API
+func (c *githubClient) Query(query interface{}, variables map[string]interface{}) error {
 	return c.v4Client.Query(c.ctx, query, variables)
 }
