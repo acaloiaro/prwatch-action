@@ -52,7 +52,6 @@ func TestListPulls(t *testing.T) {
 		q.Repository.PullRequests = pullRequests{Nodes: []GithubPullRequest{GithubPullRequest{Number: 1}}}
 		query = q
 
-		// test expected variables
 		expectedOwner := "acaloiaro"
 		if string(v["owner"].(githubv4.String)) != expectedOwner {
 			t.Errorf("expected repository to be: '%s', got: '%s'", expectedOwner, v["owner"])
@@ -88,6 +87,7 @@ func TestListPulls(t *testing.T) {
 		t.Error("should get an error when the client fails")
 	}
 
+	// TODO: Add tests over pagination of results 
 }
 
 func TestIssueId(t *testing.T) {
