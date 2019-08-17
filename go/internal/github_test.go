@@ -1,22 +1,12 @@
 package internal
 
 import (
+	"errors"
 	"os"
 	"testing"
+
+	"github.com/shurcooL/githubv4"
 )
-
-func TestNewClient(t *testing.T) {
-	client := NewClient()
-
-	if client == nil {
-		t.Error("New client creation failed")
-	}
-
-	if client.ctx == nil {
-		t.Error("Autentication should have initialized a context")
-	}
-
-}
 
 func TestRepoDetails(t *testing.T) {
 
@@ -43,27 +33,68 @@ func TestRepoDetails(t *testing.T) {
 	}
 }
 
+type MockClient struct {
+	f func(query interface{}, variables map[string]interface{}) error
+}
+
+func (c *MockClient) Query(query interface{}, variables map[string]interface{}) error {
+	return c.f(query, variables)
+}
+
 func TestListPulls(t *testing.T) {
 
-	os.Setenv("GITHUB_REPOSITORY", "grnhse/jben")
+	os.Setenv("GITHUB_REPOSITORY", "acaloiaro/isok")
+	client := &MockClient{}
 
-	client := NewClient()
+	goodQuery := func(query interface{}, v map[string]interface{}) error {
+		q := query.(*pullRequestQuery)
+
+		q.Repository.PullRequests = pullRequests{Nodes: []GithubPullRequest{GithubPullRequest{Number: 1}}}
+		query = q
+
+		expectedOwner := "acaloiaro"
+		if string(v["owner"].(githubv4.String)) != expectedOwner {
+			t.Errorf("expected repository to be: '%s', got: '%s'", expectedOwner, v["owner"])
+		}
+
+		expectedRepo := "isok"
+		if string(v["repository"].(githubv4.String)) != expectedRepo {
+			t.Errorf("expected repository to be: '%s', got: '%s'", expectedRepo, v["repository"])
+		}
+
+		return nil
+	}
+	client.f = goodQuery
+
 	pulls, err := ListPulls(client)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if len(pulls) == 0 {
-		t.Error("Should have listed some PRs")
+	firstPull := pulls[0]
+	if firstPull.Number != 1 {
+		t.Error("first PR number should have been 1")
 	}
+
+	badQuery := func(query interface{}, v map[string]interface{}) error {
+		return errors.New("bad things happened")
+	}
+	client.f = badQuery
+
+	_, err = ListPulls(client)
+	if err == nil {
+		t.Error("should get an error when the client fails")
+	}
+
+	// TODO: Add tests over pagination of results 
 }
 
 func TestIssueId(t *testing.T) {
 
 	os.Setenv("JIRA_PROJECT_NAME", "FOO")
 
-	pr := githubPullRequest{
+	pr := GithubPullRequest{
 		BodyText: "Issue url is https://foobar.atlassian.net/browse/FOO-1234",
 	}
 
