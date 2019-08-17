@@ -34,7 +34,8 @@ func TestRepoDetails(t *testing.T) {
 }
 
 type MockClient struct {
-	f func(query interface{}, variables map[string]interface{}) error
+	f         func(query interface{}, variables map[string]interface{}) error
+	pageCount int
 }
 
 func (c *MockClient) Query(query interface{}, variables map[string]interface{}) error {
@@ -87,7 +88,31 @@ func TestListPulls(t *testing.T) {
 		t.Error("should get an error when the client fails")
 	}
 
-	// TODO: Add tests over pagination of results 
+	// pagination test
+	expectedPages := 5
+	client.pageCount = 1
+	client.f = func(query interface{}, v map[string]interface{}) error {
+		morePages := false
+		if client.pageCount < 5 {
+			morePages = true
+		}
+
+		q := query.(*pullRequestQuery)
+		q.Repository.PullRequests = pullRequests{
+			PageInfo: pageInfo{HasNextPage: githubv4.Boolean(morePages)},
+			Nodes:    []GithubPullRequest{GithubPullRequest{Number: githubv4.Int(client.pageCount)}},
+		}
+
+		client.pageCount = client.pageCount + 1
+		return nil
+	}
+
+	pulls, err = ListPulls(client)
+	numPulls := len(pulls)
+	if numPulls != expectedPages {
+		t.Errorf("expected to have paged results from client. expected: '%d' results, got: '%d'", expectedPages, numPulls)
+	}
+
 }
 
 func TestIssueId(t *testing.T) {

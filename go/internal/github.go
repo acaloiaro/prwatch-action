@@ -99,7 +99,7 @@ func IssueID(pr GithubPullRequest) (issueID string, ok bool) {
 		return
 	}
 
-	// TODO: Use an environment variables for the project-issue pattern
+	// TODO: Make project-issue pattern more configurable
 	re := regexp.MustCompile(fmt.Sprintf("%s-\\d*", os.Getenv("JIRA_PROJECT_NAME")))
 	issueID = re.FindString(string(pr.BodyText))
 	ok = issueID != ""
@@ -117,7 +117,7 @@ func repositoryDetails() (owner, repository string, err error) {
 	owner = details[0]
 	repository = details[1]
 
-	log.Printf("repo owner: %s repo name %s", owner, repository)
+	log.Printf("repo owner: '%s' repo name: '%s'", owner, repository)
 	return
 }
 
