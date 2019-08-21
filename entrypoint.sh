@@ -1,3 +1,3 @@
 #!/bin/sh -l
 
-sh -c "/bin/prwatch"
+sh -c "cd go && go run prwatch.go"

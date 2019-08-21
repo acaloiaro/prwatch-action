@@ -20,13 +20,15 @@ type actor struct {
 }
 
 type GithubPullRequest struct {
-	Number    githubv4.Int
-	Title     githubv4.String
-	BodyText  githubv4.String
-	Author    actor
-	URL       githubv4.String
-	UpdatedAt githubv4.DateTime
-	Mergeable githubv4.MergeableState
+	Author      actor
+	BaseRefName githubv4.String
+	BodyText    githubv4.String
+	HeadRefName githubv4.String
+	Mergeable   githubv4.MergeableState
+	Number      githubv4.Int
+	Title       githubv4.String
+	UpdatedAt   githubv4.DateTime
+	URL         githubv4.String
 }
 
 type gqlRepository struct {
@@ -90,7 +92,11 @@ func ListPulls(client GithubQueryer) (pulls []GithubPullRequest, err error) {
 
 // HasConclift determines whether a pull request has a merge conflict
 func HasConflict(pr GithubPullRequest) bool {
-	return pr.Mergeable == "CONFLICTING"
+	if pr.Mergeable != "CONFLICTING" {
+		return false
+	}
+
+	return AttemptMerge(pr)
 }
 
 func IssueID(pr GithubPullRequest) (issueID string, ok bool) {
