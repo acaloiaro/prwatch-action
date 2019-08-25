@@ -54,6 +54,34 @@ func TransitionIssue(issue *jira.Issue) {
 	}
 }
 
+func listCategories(issueType string) []jira.StatusCategory {
+	cl := jiraClient()
+	/* its, _, err := cl.Project.ListIssueTypes("GREEN")*/
+	//if err != nil {
+	//log.Println(err)
+	//}
+
+	//var categories []jira.StatusCategory
+
+	//for _, it := range its {
+	//if it.Name == issueType {
+	//for _, st := range it.Statuses {
+
+	//log.Println("status:", st.Self, st.Name, st.ID)
+	//categories = append(categories, st.StatusCategory)
+	//}
+	//}
+	//}
+	sts, _, _ := cl.Status.GetAllStatuses()
+	for _, st := range sts {
+		log.Println("status:", st.Self, st.Name, st.ID)
+	}
+
+	var categories []jira.StatusCategory
+
+	return categories
+}
+
 func jiraClient() *jira.Client {
 	jiraUser := os.Getenv("JIRA_USER")
 	if jiraUser == "" {
@@ -82,20 +110,32 @@ func jiraClient() *jira.Client {
 
 func shouldTransition(issue *jira.Issue, newStatus string) bool {
 
-	currentStatus := issue.Fields.Status.Name
+	listCategories(issue.Fields.Type.Name)
+	/* currentStatus := issue.Fields.Status.Name*/
 
-	// TODO: Make this list less brittle
-	if currentStatus == newStatus ||
-		currentStatus == "Archived" ||
-		currentStatus == "Done" ||
-		currentStatus == "Released" ||
-		currentStatus == "Backlog" {
-		return false
-	}
+	//var currentStatusPos int
+	//var newStatusPos int
 
-	log.Printf("transitioning issue '%s' from '%s' to '%s'", issue.Key, currentStatus, newStatus)
+	//log.Printf("Current status: '%s' new status: '%s'", currentStatus, newStatus)
+	//// determine if the new desired moves the issue "back" in the workflow
+	//for pos, category := range listCategories(issue.Fields.Type.Name) {
 
-	return true
+	//if category.Name == currentStatus {
+	//currentStatusPos = pos
+	//}
+
+	//if category.Name == newStatus {
+	//newStatusPos = pos
+	//}
+	//}
+
+	//if newStatusPos < currentStatusPos {
+
+	//log.Printf("transitioning issue '%s' from '%s' to '%s'", issue.Key, currentStatus, newStatus)
+	//return true
+	//}
+
+	return false
 }
 
 func genComment(issue *jira.Issue, newStatus string) *jira.Comment {
