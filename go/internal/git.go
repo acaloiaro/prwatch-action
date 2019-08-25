@@ -14,13 +14,14 @@ import (
 func tryMerge(pr GithubPullRequest) bool {
 
 	g := services.git
-	origBranchRef := g.CurrentRefName()
 
 	// set the the current branch
 	err := g.Checkout(string(pr.BaseRefName))
 	if err != nil {
 		return false
 	}
+
+	origBranchRef := g.CurrentRefName()
 
 	err = g.Merge(fmt.Sprintf("origin/%s", string(pr.HeadRefName)))
 	if err != nil {

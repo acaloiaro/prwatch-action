@@ -3,16 +3,24 @@ package internal
 import (
 	"errors"
 	"testing"
+	"time"
 )
 
 type mockGitProvider struct {
-	checkoutFunc   func(ref string) error
-	currentRefFunc func() string
-	mergeFunc      func(ref string, args ...string) error
-	resetFunc      func(ref string, args ...string) error
+	checkoutCalled   time.Time
+	checkoutFunc     func(ref string) error
+	currentRefCalled time.Time
+	currentRefFunc   func() string
+	mergeCalled      time.Time
+	mergeFunc        func(ref string, args ...string) error
+	resetCalled      time.Time
+	resetFunc        func(ref string, args ...string) error
 }
 
 func (e *mockGitProvider) CurrentRefName() string {
+
+	e.currentRefCalled = time.Now()
+
 	if e.currentRefFunc != nil {
 		return e.currentRefFunc()
 	}
@@ -21,6 +29,9 @@ func (e *mockGitProvider) CurrentRefName() string {
 }
 
 func (e *mockGitProvider) Checkout(ref string) error {
+
+	e.checkoutCalled = time.Now()
+
 	if e.checkoutFunc != nil {
 		return e.checkoutFunc(ref)
 	}
@@ -29,6 +40,9 @@ func (e *mockGitProvider) Checkout(ref string) error {
 }
 
 func (e *mockGitProvider) Merge(ref string, args ...string) error {
+
+	e.mergeCalled = time.Now()
+
 	if e.mergeFunc != nil {
 		return e.mergeFunc(ref, args...)
 	}
@@ -37,6 +51,9 @@ func (e *mockGitProvider) Merge(ref string, args ...string) error {
 }
 
 func (e *mockGitProvider) Reset(ref string, args ...string) error {
+
+	e.resetCalled = time.Now()
+
 	if e.resetFunc != nil {
 		return e.resetFunc(ref, args...)
 	}
@@ -72,9 +89,14 @@ func TestTryMerge(t *testing.T) {
 		t.Error("Should not have been able to merge")
 	}
 
-	services.git = &mockGitProvider{}
+	p := &mockGitProvider{}
+	services.git = p
 	status = tryMerge(pr)
 	if !status {
 		t.Error("Should have been able to merge")
+	}
+
+	if p.currentRefCalled.Before(p.checkoutCalled) || p.mergeCalled.Before(p.checkoutCalled) || p.resetCalled.Before(p.mergeCalled) {
+		t.Error("git operations called in the wrong order")
 	}
 }
