@@ -1,4 +1,4 @@
-all: compile
+all: test compile
 .PHONY : all
 
 compile:
@@ -7,6 +7,8 @@ compile:
 mac:
 	$(MAKE) -C go mac
 
+test:
+	$(MAKE) -C go test
+
 clean:
 	rm -rf bin/*
-
