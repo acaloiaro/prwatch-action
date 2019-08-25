@@ -2,17 +2,27 @@
 Github action for monitoring pull requests on a repository.
 
 Current features
-* Monitor the merability of all pull requests against master
-* Transition Jira cards associated with in-conflict pull requests to a new status defined by `CONFLICT_ISSUE_STATUS`
-* Comment on transitioned cards to let assignees know that their cards have been "pushed back" due to PR conflict
+- Monitor the merability of all pull requests against master
+- Transition Jira cards associated with in-conflict pull requests to a new status defined by `CONFLICT_ISSUE_STATUS`
+- Comment on transitioned issues to let assignees know their cards have been "pushed back" due to conflicts in the pull
+  request.
 
 # Usage
 
-Note: While it is tempting to run this action on "push" to your master branch, doing so will be quite ineffective. The
-reason for that is because, immediately following a merge to "master", it is impossible to determine the mergability of the
-pull requests against it.
+To use this action, your Github Pull Requests must include in their description the key to any associated issues. E.g.
+if your project name is `FOO` and the issue associated with your pull request is `1234`, then your Pull Request must
+include `FOO-1234` somewhere in its descripton.
 
-For that reason, it's better to run on a schedule.
+## Example Pull Request Description
+```
+This PR fixes the Thinger for FOO-1234
+```
+
+Note: While it is tempting to run this action on "push" to your master branch, doing so is quite ineffective. That's
+because, immediately following a merge to "master", Github cannot determine the mergability of any pull requests
+against it.
+
+As a result, this action is best run on a schedule.
 
 ## Example: every 15 minutes
 ```yaml
