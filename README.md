@@ -57,6 +57,6 @@ jobs:
 `JIRA_USER`: The jira user with which to perform API requests
 
 ## Secrets
-`GITHUB_TOKEN`: It is not necessary to set this, as it is available to all Github Actions
+`GITHUB_TOKEN`: _It is not necessary to set this, as it is available to all Github Actions_
 
 `JIRA_API_TOKEN`: The access token to authenticate `JIRA_USER` with your Jira instance
