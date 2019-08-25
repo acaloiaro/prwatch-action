@@ -7,12 +7,13 @@ import (
 	"strings"
 )
 
-// TryMerge attempts to merge a pull request locally
-// The purpose of merging locally is because the Mergable status from Github is insufficient when a .gitatributes file
+// tryMerge attempts to merge a pull request locally
+// The purpose of merging locally is that Github's  Mergable status s insufficient when a .gitatributes file
 // is present. Because Github does not support custom merge drivers, e.g. `merge=union` from .gitattributes, merging
 // using a git client that does support custom merge drivers is the only way to tell whether a branch is truly mergable.
-func TryMerge(g GitExecutor, pr GithubPullRequest) bool {
+func tryMerge(pr GithubPullRequest) bool {
 
+	g := services.git
 	origBranchRef := g.CurrentRefName()
 
 	// set the the current branch
@@ -32,15 +33,15 @@ func TryMerge(g GitExecutor, pr GithubPullRequest) bool {
 	return err == nil
 }
 
-// GitExecutor is an interface for performing various Git operations
-type GitExecutor interface {
+// gitProvider is an interface for performing various Git operations
+type gitProvider interface {
 	Checkout(ref string) error
 	CurrentRefName() string
 	Merge(ref string, args ...string) error
 	Reset(ref string, args ...string) error
 }
 
-// GitCommandLine is a GitExecutor for the command-line executable of git, i.e. "git" proper
+// GitCommandLine is a gitProvider for the command-line executable of git, i.e. "git" proper
 // Until there is a 100% Golang git implementation that supports .gitattributes files, this is the preferred method of
 // executing git operations on the local git repository.
 type GitCommandLine struct{}

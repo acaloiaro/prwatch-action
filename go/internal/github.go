@@ -92,11 +92,17 @@ func ListPulls(client GithubQueryer) (pulls []GithubPullRequest, err error) {
 
 // HasConclift determines whether a pull request has a merge conflict
 func HasConflict(pr GithubPullRequest) bool {
-	if pr.Mergeable != "CONFLICTING" {
+
+	if pr.Mergeable != githubv4.MergeableStateConflicting {
 		return false
 	}
 
-	return !TryMerge(&GitCommandLine{}, pr)
+	// when a pr's mergable state is conflicting and no .gitattributes exists, there is no chance it is mergeable
+	if !services.files.Exists(".gitattributes") {
+		return true
+	}
+
+	return !tryMerge(pr)
 }
 
 func IssueID(pr GithubPullRequest) (issueID string, ok bool) {

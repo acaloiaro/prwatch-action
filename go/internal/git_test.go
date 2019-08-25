@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-type MockGitExecutor struct {
+type mockGitProvider struct {
 	checkoutFunc   func(ref string) error
 	currentRefFunc func() string
 	mergeFunc      func(ref string, args ...string) error
 	resetFunc      func(ref string, args ...string) error
 }
 
-func (e *MockGitExecutor) CurrentRefName() string {
+func (e *mockGitProvider) CurrentRefName() string {
 	if e.currentRefFunc != nil {
 		return e.currentRefFunc()
 	}
@@ -20,7 +20,7 @@ func (e *MockGitExecutor) CurrentRefName() string {
 	return "undefined"
 }
 
-func (e *MockGitExecutor) Checkout(ref string) error {
+func (e *mockGitProvider) Checkout(ref string) error {
 	if e.checkoutFunc != nil {
 		return e.checkoutFunc(ref)
 	}
@@ -28,7 +28,7 @@ func (e *MockGitExecutor) Checkout(ref string) error {
 	return nil
 }
 
-func (e *MockGitExecutor) Merge(ref string, args ...string) error {
+func (e *mockGitProvider) Merge(ref string, args ...string) error {
 	if e.mergeFunc != nil {
 		return e.mergeFunc(ref, args...)
 	}
@@ -36,7 +36,7 @@ func (e *MockGitExecutor) Merge(ref string, args ...string) error {
 	return nil
 }
 
-func (e *MockGitExecutor) Reset(ref string, args ...string) error {
+func (e *mockGitProvider) Reset(ref string, args ...string) error {
 	if e.resetFunc != nil {
 		return e.resetFunc(ref, args...)
 	}
@@ -46,27 +46,34 @@ func (e *MockGitExecutor) Reset(ref string, args ...string) error {
 
 func TestTryMerge(t *testing.T) {
 
+	// leave services in a good state for other tests
+	defer services.reset()
+
 	pr := GithubPullRequest{
 		BaseRefName: "foo",
 		HeadRefName: "bar",
 	}
 
-	status := TryMerge(&MockGitExecutor{checkoutFunc: func(ref string) error { return errors.New("fail") }}, pr)
+	services.git = &mockGitProvider{checkoutFunc: func(ref string) error { return errors.New("fail") }}
+	status := tryMerge(pr)
 	if status {
 		t.Error("Should not have been able to merge")
 	}
 
-	status = TryMerge(&MockGitExecutor{mergeFunc: func(ref string, a ...string) error { return errors.New("fail") }}, pr)
+	services.git = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return errors.New("fail") }}
+	status = tryMerge(pr)
 	if status {
 		t.Error("Should not have been able to merge")
 	}
 
-	status = TryMerge(&MockGitExecutor{resetFunc: func(ref string, a ...string) error { return errors.New("fail") }}, pr)
+	services.git = &mockGitProvider{resetFunc: func(ref string, a ...string) error { return errors.New("fail") }}
+	status = tryMerge(pr)
 	if status {
 		t.Error("Should not have been able to merge")
 	}
 
-	status = TryMerge(&MockGitExecutor{}, pr)
+	services.git = &mockGitProvider{}
+	status = tryMerge(pr)
 	if !status {
 		t.Error("Should have been able to merge")
 	}
