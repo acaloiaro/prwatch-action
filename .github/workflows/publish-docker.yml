@@ -1,0 +1,23 @@
+---
+'on':
+  push:
+    branches:
+      - master
+
+name: Publish to Github Package Repo
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v1
+        with:
+          ref: ${{ github.ref }}
+      - name: Publish Container
+        uses: pangzineng/Github-Action-One-Click-Docker@v1.1.1
+        env:
+          DOCKER_REGISTRY_URL: docker.pkg.github.com
+          DOCKER_USERNAME: acaloiaro
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_IMAGE_NAME: prwatch/build
