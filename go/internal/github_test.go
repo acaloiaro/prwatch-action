@@ -8,6 +8,14 @@ import (
 	"github.com/shurcooL/githubv4"
 )
 
+type mockFilesProvider struct {
+	files map[string]bool
+}
+
+func (p mockFilesProvider) Exists(path string) bool {
+	return p.files[path]
+}
+
 func TestRepoDetails(t *testing.T) {
 
 	os.Setenv("GITHUB_REPOSITORY", "foo/bar")
@@ -126,5 +134,38 @@ func TestIssueId(t *testing.T) {
 	const expectedID = "FOO-1234"
 	if ID, ok := IssueID(pr); ID != expectedID || !ok {
 		t.Errorf("expected issue id: %s: got: %s", expectedID, ID)
+	}
+}
+
+func TestHasConflict(t *testing.T) {
+
+	defer services.reset()
+
+	pr := GithubPullRequest{
+		Mergeable: githubv4.MergeableStateConflicting,
+	}
+
+	// when .gitattributes doesn't exist and the PR is in conflict, then there is a conflict
+	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": false}}
+	services.git = &mockGitProvider{}
+	conflict := HasConflict(pr)
+	if !conflict {
+		t.Error("this pull request should be considered in conflict")
+	}
+
+	// when .gitattributes exists and the PR is in conflict, then there is a conflict only when merging fails
+	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": true}}
+	services.git = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return errors.New("no good") }}
+	conflict = HasConflict(pr)
+	if !conflict {
+		t.Error("this pull request should be considered in conflict")
+	}
+
+	// when .gitattributes exists and the PR is in conflict, then there is a conflict only when merging fails
+	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": true}}
+	services.git = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return nil }}
+	conflict = HasConflict(pr)
+	if conflict {
+		t.Error("this pull request should not be considered in conflict")
 	}
 }

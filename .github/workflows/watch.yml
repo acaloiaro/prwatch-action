@@ -1,9 +1,0 @@
----
-name: Monitor Pulls
-jobs:
-  monitorPullRequests:
-    name: Monitor Pull Requests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Monitor Pull Requests
-        uses: ./

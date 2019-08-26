@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/acaloiaro/prwatch/internal"
-	jira "github.com/andygrunwald/go-jira"
+	"github.com/andygrunwald/go-jira"
 )
 
 func main() {
@@ -21,11 +21,16 @@ func main() {
 
 	for _, pull := range pulls {
 
+		log.Println("Checking pull request:", pull.Number)
+
 		if issueID, ok = internal.IssueID(pull); !ok {
 			continue
 		}
 
 		if internal.HasConflict(pull) {
+
+			log.Println("Pull request has conflict:", pull.Number)
+
 			internal.TransitionIssue(&jira.Issue{ID: issueID})
 		}
 	}
