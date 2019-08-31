@@ -1,7 +1,7 @@
 FROM golang:alpine
 
 LABEL com.github.actions.name="PRwatch"
-LABEL com.github.actions.description="Let Github monitor Pull Requests and manage development processes for you."
+LABEL com.github.actions.description="Let GitHub monitor Pull Requests and manage development processes for you."
 LABEL com.github.actions.icon="watch"
 LABEL com.github.actions.color="green"
 
