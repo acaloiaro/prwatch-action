@@ -10,7 +10,7 @@ Current features
 # Usage
 
 To use this action, your Github Pull Requests must include in their description the key to any associated issues. E.g.
-if your project name is `FOO` and the issue associated with your pull request is `1234`, then your Pull Request must
+if your Jira project name is `FOO` and the issue associated with your pull request is `1234`, then your Pull Request must
 include `FOO-1234` somewhere in its descripton.
 
 ## Example Pull Request Description
@@ -18,13 +18,34 @@ include `FOO-1234` somewhere in its descripton.
 This PR fixes the Thinger for FOO-1234
 ```
 
-Note: While it is tempting to run this action on "push" to your master branch, doing so is quite ineffective. That's
-because, immediately following a merge to "master", Github cannot determine the mergability of any pull requests
-against it.
+## Run on merge with master
+```yaml
+---
+'on':
+  push:
+      branches:
+            - master
 
-As a result, this action is best run on a schedule.
+name: prwatch
+jobs:
+  check:
+    name: Check Pull Requests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conflict Check
+        uses: acaloiaro/prwatch@master
+        env:
+          CONFLICT_ISSUE_STATUS: In Development
+          DUAL_PASS_WAIT_DURATION: 60s
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_HOST: companyname.atalassian.net
+          JIRA_PROJECT_NAME: PROJNAME
+          JIRA_USER: jira-bot
 
-## Example: every 15 minutes
+```
+
+## Run every 15 minutes
 ```yaml
 ---
 'on':
@@ -49,6 +70,11 @@ jobs:
 
 ## Variables
 `CONFLICT_ISSUE_STATUS`: The new status to assign issues when their corresponding PRs are in conflict
+
+`DUAL_PASS_WAIT_DURATION`: The duration of time to wait after pulling down the list of open pull requests from Github.
+This period of time should be long enough for Github to determine the mergability of all your open pull requests.
+Recommended: `1m30s`. Note: The value of this variable must conform to the Golang duration format:
+https://golang.org/pkg/time/#ParseDuration
 
 `JIRA_HOST`: The hostname for your Jira instance. If you are on Jira Cloud, this will be `companyname.atalassian.net`
 
