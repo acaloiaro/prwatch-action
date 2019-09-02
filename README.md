@@ -26,14 +26,14 @@ This PR fixes the Thinger for FOO-1234
       branches:
             - master
 
-name: prwatch
+name: Pull Request Watch
 jobs:
   check:
     name: Check Pull Requests
     runs-on: ubuntu-latest
     steps:
       - name: Conflict Check
-        uses: acaloiaro/prwatch@latest
+        uses: acaloiaro/prwatch-action@latest
         env:
           CONFLICT_ISSUE_STATUS: In Development
           DUAL_PASS_WAIT_DURATION: 60s
