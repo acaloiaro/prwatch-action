@@ -19,6 +19,7 @@ type actor struct {
 	Login githubv4.String
 }
 
+// GithubPullRequest contains all the relevant information about Github pull requests
 type GithubPullRequest struct {
 	Author      actor
 	BaseRefName githubv4.String
@@ -90,8 +91,8 @@ func ListPulls(client GithubQueryer) (pulls []GithubPullRequest, err error) {
 	return
 }
 
-// HasConclift determines whether a pull request has a merge conflict
-func HasConflict(pr GithubPullRequest) bool {
+// hasConflict determines whether a pull request has a merge conflict
+func hasConflict(pr GithubPullRequest) bool {
 
 	if pr.Mergeable != githubv4.MergeableStateConflicting {
 		return false
@@ -105,6 +106,7 @@ func HasConflict(pr GithubPullRequest) bool {
 	return !tryMerge(pr)
 }
 
+// IssueID determines the "issue" associated with a pull request
 func IssueID(pr GithubPullRequest) (issueID string, ok bool) {
 	if len(string(pr.BodyText)) == 0 {
 		ok = false
@@ -143,17 +145,19 @@ type githubClient struct {
 	ctx      context.Context
 }
 
-// NewClient creates a new Github client
-func NewClient() (client GithubQueryer) {
+// NewGithubClient creates a new Github client
+func NewGithubClient() (client GithubQueryer) {
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
 	)
 
 	ctx := context.Background()
-	return &githubClient{
+	client = &githubClient{
 		v4Client: githubv4.NewClient(oauth2.NewClient(ctx, src)),
 		ctx:      ctx,
 	}
+
+	return
 }
 
 // Query queries the github v4 graphql API

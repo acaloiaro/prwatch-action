@@ -41,19 +41,19 @@ func TestRepoDetails(t *testing.T) {
 	}
 }
 
-type MockClient struct {
+type MockGithubClient struct {
 	f         func(query interface{}, variables map[string]interface{}) error
 	pageCount int
 }
 
-func (c *MockClient) Query(query interface{}, variables map[string]interface{}) error {
+func (c *MockGithubClient) Query(query interface{}, variables map[string]interface{}) error {
 	return c.f(query, variables)
 }
 
 func TestListPulls(t *testing.T) {
 
 	os.Setenv("GITHUB_REPOSITORY", "acaloiaro/isok")
-	client := &MockClient{}
+	client := &MockGithubClient{}
 
 	goodQuery := func(query interface{}, v map[string]interface{}) error {
 		q := query.(*pullRequestQuery)
@@ -137,7 +137,7 @@ func TestIssueId(t *testing.T) {
 	}
 }
 
-func TestHasConflict(t *testing.T) {
+func TesthasConflict(t *testing.T) {
 
 	defer services.reset()
 
@@ -148,7 +148,7 @@ func TestHasConflict(t *testing.T) {
 	// when .gitattributes doesn't exist and the PR is in conflict, then there is a conflict
 	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": false}}
 	services.git = &mockGitProvider{}
-	conflict := HasConflict(pr)
+	conflict := hasConflict(pr)
 	if !conflict {
 		t.Error("this pull request should be considered in conflict")
 	}
@@ -156,7 +156,7 @@ func TestHasConflict(t *testing.T) {
 	// when .gitattributes exists and the PR is in conflict, then there is a conflict only when merging fails
 	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": true}}
 	services.git = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return errors.New("no good") }}
-	conflict = HasConflict(pr)
+	conflict = hasConflict(pr)
 	if !conflict {
 		t.Error("this pull request should be considered in conflict")
 	}
@@ -164,7 +164,7 @@ func TestHasConflict(t *testing.T) {
 	// when .gitattributes exists and the PR is in conflict, then there is a conflict only when merging fails
 	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": true}}
 	services.git = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return nil }}
-	conflict = HasConflict(pr)
+	conflict = hasConflict(pr)
 	if conflict {
 		t.Error("this pull request should not be considered in conflict")
 	}
