@@ -1,4 +1,4 @@
-# prwatch
+# prwatch-action
 Github action for monitoring pull requests on a repository.
 
 Current features
