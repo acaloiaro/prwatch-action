@@ -94,6 +94,11 @@ func ListPulls(client GithubQueryer) (pulls []GithubPullRequest, err error) {
 // hasConflict determines whether a pull request has a merge conflict
 func hasConflict(pr GithubPullRequest) bool {
 
+	if pr.Mergeable == githubv4.MergeableStateUnknown {
+		log.Println("Unable to determine pull request's mergable state. Consider increasing DUAL_PASS_WAIT_DURATION " +
+			"to give Github more time to calculate mergable state.")
+	}
+
 	if pr.Mergeable != githubv4.MergeableStateConflicting {
 		return false
 	}
