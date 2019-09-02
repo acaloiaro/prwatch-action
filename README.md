@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Conflict Check
-        uses: acaloiaro/prwatch@master
+        uses: acaloiaro/prwatch@latest
         env:
           CONFLICT_ISSUE_STATUS: In Development
           DUAL_PASS_WAIT_DURATION: 60s
