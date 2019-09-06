@@ -9,19 +9,63 @@ import (
 	jira "github.com/andygrunwald/go-jira"
 )
 
-var transitionName = os.Getenv("CONFLICT_ISSUE_STATUS")
+type jiraIssueProvider struct {
+	c *jira.Client
+}
+
+func newJiraIssueProvider(c *jira.Client) issueProvider {
+	j := jiraIssueProvider{
+		c: c,
+	}
+
+	return &j
+}
+
+// CommentIssue comments on jira issues with a pre-defined comment
+func (j *jiraIssueProvider) CommentIssue(i issue) (ok bool) {
+
+	if !issueCommentsEnabled() {
+		return
+	}
+
+	jiraIssue, _, err := j.c.Issue.Get(i.ID, nil)
+	if err != nil {
+		log.Printf("unable to retrieve issue: '%s': %v", i.ID, err)
+	}
+
+	_, _, err = j.c.Issue.AddComment(i.ID, j.genComment(jiraIssue, transitionName))
+	if err != nil {
+		log.Printf("unable to leave comment on issue: '%s': %v", i.ID, err)
+	}
+
+	ok = err == nil
+
+	return
+}
+
+func (j *jiraIssueProvider) jiraIssueFor(i issue) *jira.Issue {
+	return &jira.Issue{
+		ID:   i.ID,
+		Key:  i.Key,
+		Self: i.Value,
+	}
+}
 
 // TransitionIssue transitions an issue's status to the one specified by the NEW_ISSUE_STATUS environment variable.
-func TransitionIssue(issue *jira.Issue) {
+func (j *jiraIssueProvider) TransitionIssue(i issue) (ok bool) {
+
+	if !issueTransitionsEnabled() {
+		return
+	}
 
 	if transitionName == "" {
 		log.Fatal("please set CONFLICT_ISSUE_STATUS with the status for in-conflict PRs, e.g. 'In Progress'")
 	}
 
-	cl := jiraClient()
-	trs, _, err := cl.Issue.GetTransitions(issue.ID)
+	trs, _, err := j.c.Issue.GetTransitions(i.ID)
 	if err != nil {
-		log.Fatalf("unable to retrieve possible transition list for issue %v: %v", issue.ID, err)
+		log.Printf("unable to retrieve possible transition list for issue %v: %v", i.ID, err)
+		return
 	}
 
 	// Find the desired transitionName in the possible transition list for this issue
@@ -33,28 +77,26 @@ func TransitionIssue(issue *jira.Issue) {
 	}
 
 	if transitionID == "" {
-		log.Fatalf("%s is not a valid transition for issue: %s", transitionName, issue.ID)
-	}
-
-	issue, _, err = cl.Issue.Get(issue.ID, nil)
-
-	if err != nil || !shouldTransition(issue, transitionName) {
-		log.Printf("not transitioning issue: %s", issue.ID)
+		log.Printf("%s is not a valid transition for issue: %s", transitionName, i.ID)
 		return
 	}
 
-	_, err = cl.Issue.DoTransition(issue.ID, transitionID)
+	jiraIssue, _, err := j.c.Issue.Get(i.ID, nil)
+	if err != nil || !j.shouldTransition(jiraIssue, transitionName) {
+		log.Printf("Not transitioning issue: %s.", i.ID)
+		return
+	}
+
+	_, err = j.c.Issue.DoTransition(i.ID, transitionID)
 	if err != nil {
 		log.Printf("unable to transition issue: %v", err)
 	}
 
-	_, _, err = cl.Issue.AddComment(issue.ID, genComment(issue, transitionName))
-	if err != nil {
-		log.Printf("unable to leave comment on issue '%s': %v", issue.ID, err)
-	}
+	ok = true
+	return
 }
 
-func jiraClient() *jira.Client {
+func newJiraClient() *jira.Client {
 	jiraUser := os.Getenv("JIRA_USER")
 	if jiraUser == "" {
 		log.Fatal("Please set JIRA_USER environment variable with your Jira username")
@@ -80,7 +122,7 @@ func jiraClient() *jira.Client {
 	return jiraClient
 }
 
-func shouldTransition(issue *jira.Issue, newStatus string) bool {
+func (j *jiraIssueProvider) shouldTransition(issue *jira.Issue, newStatus string) bool {
 
 	currentStatus := issue.Fields.Status.Name
 
@@ -98,7 +140,7 @@ func shouldTransition(issue *jira.Issue, newStatus string) bool {
 	return true
 }
 
-func genComment(issue *jira.Issue, newStatus string) *jira.Comment {
+func (p *jiraIssueProvider) genComment(issue *jira.Issue, newStatus string) *jira.Comment {
 	return &jira.Comment{
 		Body: fmt.Sprintf("[~%s]: This card (%s) has been sent back to '%s' because its Pull Request has a merge conflict.", issue.Fields.Assignee.Key, issue.Key, newStatus),
 	}

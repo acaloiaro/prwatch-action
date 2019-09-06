@@ -13,7 +13,7 @@ import (
 // using a git client that does support custom merge drivers is the only way to tell whether a branch is truly mergable.
 func tryMerge(pr GithubPullRequest) bool {
 
-	g := services.git
+	g := services.git()
 
 	// set the the current branch
 	err := g.Checkout(string(pr.BaseRefName))

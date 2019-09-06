@@ -137,7 +137,7 @@ func TestIssueId(t *testing.T) {
 	}
 }
 
-func TesthasConflict(t *testing.T) {
+func TestHasConflict(t *testing.T) {
 
 	defer services.reset()
 
@@ -146,24 +146,24 @@ func TesthasConflict(t *testing.T) {
 	}
 
 	// when .gitattributes doesn't exist and the PR is in conflict, then there is a conflict
-	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": false}}
-	services.git = &mockGitProvider{}
+	services.f = mockFilesProvider{files: map[string]bool{".gitattributes": false}}
+	services.g = &mockGitProvider{}
 	conflict := hasConflict(pr)
 	if !conflict {
 		t.Error("this pull request should be considered in conflict")
 	}
 
 	// when .gitattributes exists and the PR is in conflict, then there is a conflict only when merging fails
-	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": true}}
-	services.git = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return errors.New("no good") }}
+	services.f = mockFilesProvider{files: map[string]bool{".gitattributes": true}}
+	services.g = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return errors.New("no good") }}
 	conflict = hasConflict(pr)
 	if !conflict {
 		t.Error("this pull request should be considered in conflict")
 	}
 
 	// when .gitattributes exists and the PR is in conflict, then there is a conflict only when merging fails
-	services.files = mockFilesProvider{files: map[string]bool{".gitattributes": true}}
-	services.git = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return nil }}
+	services.f = mockFilesProvider{files: map[string]bool{".gitattributes": true}}
+	services.g = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return nil }}
 	conflict = hasConflict(pr)
 	if conflict {
 		t.Error("this pull request should not be considered in conflict")

@@ -6,8 +6,6 @@ import (
 	"math"
 	"os"
 	"time"
-
-	jira "github.com/andygrunwald/go-jira"
 )
 
 type executor struct {
@@ -83,14 +81,18 @@ func (e *DefaultExecutionPlan) Execute() error {
 		log.Println("Checking pull request:", pull.Number)
 
 		if issueID, ok = IssueID(pull); !ok {
+			log.Printf("no issue ID associated with this pull request '%d', skipping", pull.Number)
 			continue
 		}
 
 		if hasConflict(pull) {
 
-			log.Println("Pull request has conflict:", pull.Number)
+			log.Printf("Pull request has conflict: %s", pull.URL)
 
-			TransitionIssue(&jira.Issue{ID: issueID})
+			i := issue{ID: issueID}
+
+			services.issues().TransitionIssue(i)
+			services.issues().CommentIssue(i)
 		}
 	}
 

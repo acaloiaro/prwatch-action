@@ -104,7 +104,7 @@ func hasConflict(pr GithubPullRequest) bool {
 	}
 
 	// when a pr's mergable state is conflicting and no .gitattributes exists, there is no chance it is mergeable
-	if !services.files.Exists(".gitattributes") {
+	if !services.files().Exists(".gitattributes") {
 		return true
 	}
 
