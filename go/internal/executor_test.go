@@ -1,9 +1,10 @@
 package internal
 
 import (
-	"os"
 	"testing"
 	"time"
+
+	"github.com/acaloiaro/prwatch/internal/config"
 )
 
 type testExecutionPlan struct {
@@ -33,8 +34,10 @@ func (t testExecutionPlan) client() GithubQueryer {
 func TestExecutorExecute(t *testing.T) {
 	client := &MockGithubClient{}
 
-	os.Setenv("GITHUB_REPOSITORY", "acaloiaro/isok")
-	os.Setenv("DUAL_PASS_WAIT_DURATION", "1ms")
+	config.SetEnv("GITHUB_REPOSITORY", "acaloiaro/isok")
+
+	config.GlobalEnable("dual_pass")
+	config.GlobalSet("dual_pass", "wait_duration", "1ms")
 
 	st := &testExecutionPlan{
 		passCount:    0,
@@ -42,7 +45,7 @@ func TestExecutorExecute(t *testing.T) {
 		t:            time.NewTimer(dualPassInterval()), // DualPassTimer
 	}
 
-	// The second "pass" occurrs when the execution strategy's Execute() is called; f implements the strategy's Execute()
+	// The second pass occurrs when the execution strategy's Execute() is called; f implements the strategy's Execute()
 	secondPass := func() error {
 		st.secondPassFinished = time.Now()
 		st.passCount = st.passCount + 1

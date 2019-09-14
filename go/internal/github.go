@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 
+	"github.com/acaloiaro/prwatch/internal/config"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
@@ -119,14 +119,15 @@ func IssueID(pr GithubPullRequest) (issueID string, ok bool) {
 	}
 
 	// TODO: Make project-issue pattern more configurable
-	re := regexp.MustCompile(fmt.Sprintf("%s-\\d*", os.Getenv("JIRA_PROJECT_NAME")))
+	// TODO: Decouple IssueId from Jira settings
+	re := regexp.MustCompile(fmt.Sprintf("%s-\\d*", config.GetString("jira", "project_name")))
 	issueID = re.FindString(string(pr.BodyText))
 	ok = issueID != ""
 	return
 }
 
 func repositoryDetails() (owner, repository string, err error) {
-	repoDetails := os.Getenv("GITHUB_REPOSITORY")
+	repoDetails := config.GetEnv("GITHUB_REPOSITORY")
 	details := strings.Split(repoDetails, "/")
 	if len(details) != 2 {
 		err = errors.New("Unable to determine the owner and repository where this Action is running. Check GITHUB_REPOSITORY")
@@ -153,7 +154,7 @@ type githubClient struct {
 // NewGithubClient creates a new Github client
 func NewGithubClient() (client GithubQueryer) {
 	src := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+		&oauth2.Token{AccessToken: config.GetEnv("GITHUB_TOKEN")},
 	)
 
 	ctx := context.Background()

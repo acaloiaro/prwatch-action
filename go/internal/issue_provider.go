@@ -1,9 +1,5 @@
 package internal
 
-import (
-	"os"
-)
-
 // issueProvider is an interface for providing issue management using project management APIs (Jira, github issus, etc.)
 // There is not yet a concept of a project management provider here in prwatch, but perhaps there will be. In the event
 // that such a time arrives, this inteface will become the interface through which issue management is provided for
@@ -23,27 +19,4 @@ type issue struct {
 type issueComment struct {
 	user    string
 	comment string
-}
-
-// the issue status to transitions issues to upon conflict
-var transitionName = os.Getenv("CONFLICT_ISSUE_STATUS")
-
-func issueTransitionsEnabled() (yes bool) {
-
-	// flag to enable issue transitions upon conflict
-	if value, ok := os.LookupEnv("ENABLE_ISSUE_TRANSITIONS"); ok {
-		yes = value == "true"
-	}
-
-	return
-}
-
-func issueCommentsEnabled() (yes bool) {
-
-	// flag to enable issue comments upon conflict
-	if value, ok := os.LookupEnv("ENABLE_ISSUE_COMMENTS"); ok {
-		yes = value == "true"
-	}
-
-	return
 }
