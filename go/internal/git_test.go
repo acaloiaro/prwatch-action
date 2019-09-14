@@ -71,26 +71,26 @@ func TestTryMerge(t *testing.T) {
 		HeadRefName: "bar",
 	}
 
-	services.git = &mockGitProvider{checkoutFunc: func(ref string) error { return errors.New("fail") }}
+	services.g = &mockGitProvider{checkoutFunc: func(ref string) error { return errors.New("fail") }}
 	status := tryMerge(pr)
 	if status {
 		t.Error("Should not have been able to merge")
 	}
 
-	services.git = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return errors.New("fail") }}
+	services.g = &mockGitProvider{mergeFunc: func(ref string, a ...string) error { return errors.New("fail") }}
 	status = tryMerge(pr)
 	if status {
 		t.Error("Should not have been able to merge")
 	}
 
-	services.git = &mockGitProvider{resetFunc: func(ref string, a ...string) error { return errors.New("fail") }}
+	services.g = &mockGitProvider{resetFunc: func(ref string, a ...string) error { return errors.New("fail") }}
 	status = tryMerge(pr)
 	if status {
 		t.Error("Should not have been able to merge")
 	}
 
 	p := &mockGitProvider{}
-	services.git = p
+	services.g = p
 	status = tryMerge(pr)
 	if !status {
 		t.Error("Should have been able to merge")
