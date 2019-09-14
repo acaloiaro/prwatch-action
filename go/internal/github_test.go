@@ -2,9 +2,9 @@ package internal
 
 import (
 	"errors"
-	"os"
 	"testing"
 
+	"github.com/acaloiaro/prwatch/internal/config"
 	"github.com/shurcooL/githubv4"
 )
 
@@ -18,7 +18,7 @@ func (p mockFilesProvider) Exists(path string) bool {
 
 func TestRepoDetails(t *testing.T) {
 
-	os.Setenv("GITHUB_REPOSITORY", "foo/bar")
+	config.SetEnv("GITHUB_REPOSITORY", "foo/bar")
 
 	owner, repo, err := repositoryDetails()
 
@@ -34,7 +34,7 @@ func TestRepoDetails(t *testing.T) {
 		t.Error("Repository should be 'bar'")
 	}
 
-	os.Setenv("GITHUB_REPOSITORY", "invalid")
+	config.SetEnv("GITHUB_REPOSITORY", "invalid")
 	_, _, err = repositoryDetails()
 	if err == nil {
 		t.Error("Repository details should have returned an error")
@@ -52,7 +52,7 @@ func (c *MockGithubClient) Query(query interface{}, variables map[string]interfa
 
 func TestListPulls(t *testing.T) {
 
-	os.Setenv("GITHUB_REPOSITORY", "acaloiaro/isok")
+	config.SetEnv("GITHUB_REPOSITORY", "acaloiaro/isok")
 	client := &MockGithubClient{}
 
 	goodQuery := func(query interface{}, v map[string]interface{}) error {
@@ -125,7 +125,8 @@ func TestListPulls(t *testing.T) {
 
 func TestIssueId(t *testing.T) {
 
-	os.Setenv("JIRA_PROJECT_NAME", "FOO")
+	config.GlobalEnable(config.Jira)
+	config.GlobalSet(config.JiraProjectName, "FOO")
 
 	pr := GithubPullRequest{
 		BodyText: "Issue url is https://foobar.atlassian.net/browse/FOO-1234",

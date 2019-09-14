@@ -4,8 +4,9 @@ package internal
 import (
 	"log"
 	"math"
-	"os"
 	"time"
+
+	"github.com/acaloiaro/prwatch/internal/config"
 )
 
 type executor struct {
@@ -27,7 +28,7 @@ func NewExecutor(s executionPlan) *executor {
 // The second phase is to determine the actual mergability of all open pull requests.
 func (e *executor) Execute() error {
 
-	if DualPassEnabled() {
+	if config.SettingEnabled(config.DualPass) {
 		timer := e.executionPlan.DualPassTimer()
 
 		// List open pull requests to trigger a refresh of Github's mergability status
@@ -78,7 +79,7 @@ func (e *DefaultExecutionPlan) Execute() error {
 
 	for _, pull := range pulls {
 
-		log.Println("Checking pull request:", pull.Number)
+		log.Println("checking pull request:", pull.Number)
 
 		if issueID, ok = IssueID(pull); !ok {
 			log.Printf("no issue ID associated with this pull request '%d', skipping", pull.Number)
@@ -87,12 +88,14 @@ func (e *DefaultExecutionPlan) Execute() error {
 
 		if hasConflict(pull) {
 
-			log.Printf("Pull request has conflict: %s", pull.URL)
+			log.Printf("pull request has conflict: %s", pull.URL)
 
-			i := issue{ID: issueID}
+			i := issue{ID: issueID, Owner: string(pull.Author.Login)}
 
 			services.issues().TransitionIssue(i)
 			services.issues().CommentIssue(i)
+		} else {
+			log.Printf("pull request is not conflicitng: %s", pull.URL)
 		}
 	}
 
@@ -113,22 +116,9 @@ func (e DefaultExecutionPlan) DualPassTimer() (timer *time.Timer) {
 	return
 }
 
-// DualPassEnabled determines if DUAL_PASS_WAIT_DURATION contains a valid duration, thus enabling dual pass mode
-func DualPassEnabled() bool {
-
-	_, err := time.ParseDuration(os.Getenv("DUAL_PASS_WAIT_DURATION"))
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
 func dualPassInterval() time.Duration {
-	d, err := time.ParseDuration(os.Getenv("DUAL_PASS_WAIT_DURATION"))
-	if err != nil {
-		return time.Duration(0 * time.Second)
-	}
+
+	d := config.GetDuration(config.DualPassWaitDuration)
 
 	return d
 }

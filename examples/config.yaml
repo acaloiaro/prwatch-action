@@ -1,0 +1,20 @@
+---
+settings:
+  dual_pass:
+    enabled: true
+    wait_duration: 60s
+  jira:
+    enabled: true
+    user: jira-bot@companyname.com
+    host: companyname.atlassian.net
+    project_name: PROJECT
+  issues:
+    conflict_status: In Progress
+    enable_comment: true
+    enable_transition: true
+users:
+  a_github_username:
+    settings:
+      issues:
+        enable_comment: true
+        enable_transition: true
