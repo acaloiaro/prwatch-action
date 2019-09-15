@@ -30,6 +30,7 @@ section](#configuration_file) for how to enable dual-pass mode when triggering t
 2. Add `./github-actions/prwatch-action/config.yaml` to your repository. [Example
    configuration](https://github.com/acaloiaro/prwatch-action/tree/master/examples/config.yaml)
 
+## Run on Push 
 ```yaml
 ---
 'on':
