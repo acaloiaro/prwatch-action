@@ -1,0 +1,19 @@
+---
+'on':
+  push:
+    branches:
+      - master
+
+name: PRWatch Action
+jobs:
+  check:
+    name: Check Pull Requests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Branch
+        uses: actions/checkout@v1
+      - name: Check for conflicts
+        uses: acaloiaro/prwatch-action@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}

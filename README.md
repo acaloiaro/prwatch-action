@@ -19,18 +19,23 @@ Request must include `FOO-1234` somewhere in its description.
 This PR fixes the Thinger for FOO-1234
 ```
 
-## Run on merge with master
+## Setup
 
-This action performs best when it is configured `on.push` to your mainline branch. The idea is to trigger a mergeability
-check when feature branches merge upstream. See [configuration the section](#configuration_file) for how to enable
-dual-pass mode when triggering this action `on.push`.
+This action performs best when it is configured with `settings.dual_pass.enabled` and `on.push` to your mainline branch.
+The idea is to trigger a mergeability check when feature branches merge upstream. See [the configuration
+section](#configuration_file) for how to enable dual-pass mode when triggering this action `on.push`.
+
+1. Add `./.github/workflows/prwatch.yml` workflow file to your repository [Example
+   Workflows](https://github.com/acaloiaro/prwatch-action/tree/master/examples/workflows)
+2. Add `./github-actions/prwatch-action/config.yaml` to your repository. [Example
+   configuration](https://github.com/acaloiaro/prwatch-action/tree/master/examples/config.yaml)
 
 ```yaml
 ---
 'on':
   push:
-      branches:
-            - master
+    branches:
+      - master
 
 name: PRWatch Action
 jobs:
@@ -38,6 +43,8 @@ jobs:
     name: Check Pull Requests
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Branch
+        uses: actions/checkout@v1
       - name: Check for conflicts
         uses: acaloiaro/prwatch-action@latest
         env:
@@ -51,12 +58,15 @@ jobs:
 'on':
   schedule:
     - cron: '*/15 * * * *'
-name: Monitor Pull Requests
+
+name: PRWatch Action
 jobs:
   check:
     name: Check Pull Requests
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Branch
+        uses: actions/checkout@v1
       - name: Check for conflicts
         uses: acaloiaro/prwatch-action@latest
         env:
