@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"os"
 
+	config "github.com/acaloiaro/prwatch/internal/config"
 	jira "github.com/andygrunwald/go-jira"
 )
 
@@ -24,15 +24,20 @@ func newJiraIssueProvider(c *jira.Client) issueProvider {
 // CommentIssue comments on jira issues with a pre-defined comment
 func (j *jiraIssueProvider) CommentIssue(i issue) (ok bool) {
 
-	if !issueCommentsEnabled() {
+	if !config.UserSettingEnabled(i.Owner, config.IssueComments) {
 		return
 	}
 
 	jiraIssue, _, err := j.c.Issue.Get(i.ID, nil)
 	if err != nil {
-		log.Printf("unable to retrieve issue: '%s': %v", i.ID, err)
+		log.Printf("unable to retrieve issue: '%s': %v. %s", i.ID, err, config.CheckMessage(
+			config.JiraUser,
+			"Ensure JIRA_AUTH_TOKEN belongs to the user.",
+		))
+		return
 	}
 
+	transitionName := config.GetString(config.IssueConflictStatus)
 	_, _, err = j.c.Issue.AddComment(i.ID, j.genComment(jiraIssue, transitionName))
 	if err != nil {
 		log.Printf("unable to leave comment on issue: '%s': %v", i.ID, err)
@@ -51,15 +56,17 @@ func (j *jiraIssueProvider) jiraIssueFor(i issue) *jira.Issue {
 	}
 }
 
-// TransitionIssue transitions an issue's status to the one specified by the NEW_ISSUE_STATUS environment variable.
+// TransitionIssue transitions an issue's status to the one specified by settings.issues.conflict_status
 func (j *jiraIssueProvider) TransitionIssue(i issue) (ok bool) {
 
-	if !issueTransitionsEnabled() {
+	if !config.UserSettingEnabled(i.Owner, config.IssueTransitions) {
 		return
 	}
 
+	transitionName := config.GetString(config.IssueConflictStatus)
 	if transitionName == "" {
-		log.Fatal("please set CONFLICT_ISSUE_STATUS with the status for in-conflict PRs, e.g. 'In Progress'")
+		log.Println(config.CheckMessage(config.IssueConflictStatus, "e.g. 'In Progress'"))
+		return
 	}
 
 	trs, _, err := j.c.Issue.GetTransitions(i.ID)
@@ -97,19 +104,23 @@ func (j *jiraIssueProvider) TransitionIssue(i issue) (ok bool) {
 }
 
 func newJiraClient() *jira.Client {
-	jiraUser := os.Getenv("JIRA_USER")
-	if jiraUser == "" {
-		log.Fatal("Please set JIRA_USER environment variable with your Jira username")
+	if !config.GetBool(config.Jira) {
+		log.Fatalf("Enable jira in config.yaml: %s", config.Jira)
 	}
 
-	apiToken := os.Getenv("JIRA_API_TOKEN")
+	jiraUser := config.GetString(config.JiraUser)
+	if jiraUser == "" {
+		log.Fatalf("Please set in config.yaml: %s", config.JiraUser)
+	}
+
+	jiraHost := config.GetString(config.JiraHost)
+	if jiraHost == "" {
+		log.Fatalf("Please set in config.yaml: %s", config.JiraHost)
+	}
+
+	apiToken := config.GetEnv("JIRA_API_TOKEN")
 	if apiToken == "" {
 		log.Fatal("Please set JIRA_API_TOKEN environment variable with your Jira API token.")
-	}
-
-	jiraHost := os.Getenv("JIRA_HOST")
-	if jiraHost == "" {
-		log.Fatal("Please set JIRA_HOST environment variable with your Jira instance's hostname.")
 	}
 
 	url := fmt.Sprintf("https://%s:%s@%s", url.QueryEscape(jiraUser), apiToken, jiraHost)
@@ -140,7 +151,7 @@ func (j *jiraIssueProvider) shouldTransition(issue *jira.Issue, newStatus string
 	return true
 }
 
-func (p *jiraIssueProvider) genComment(issue *jira.Issue, newStatus string) *jira.Comment {
+func (j *jiraIssueProvider) genComment(issue *jira.Issue, newStatus string) *jira.Comment {
 	return &jira.Comment{
 		Body: fmt.Sprintf("[~%s]: This card (%s) has been sent back to '%s' because its Pull Request has a merge conflict.", issue.Fields.Assignee.Key, issue.Key, newStatus),
 	}

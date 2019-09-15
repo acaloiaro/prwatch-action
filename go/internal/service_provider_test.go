@@ -1,15 +1,18 @@
 package internal
 
 import (
-	"os"
 	"testing"
+
+	"github.com/acaloiaro/prwatch/internal/config"
 )
 
 func TestServiceInitialization(t *testing.T) {
 
-	os.Setenv("JIRA_USER", "foo")
-	os.Setenv("JIRA_API_TOKEN", "bar")
-	os.Setenv("JIRA_HOST", "test.dev")
+	config.GlobalEnable(config.Jira)
+	config.GlobalSet(config.JiraUser, "foo")
+	config.GlobalSet(config.JiraHost, "host.dev")
+
+	config.SetEnv("JIRA_API_TOKEN", "bar")
 
 	if services.issues() == nil {
 		t.Error("services provider should initialize its issue provider")
