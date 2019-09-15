@@ -11,27 +11,43 @@ import (
 // The purpose of merging locally is that Github's  Mergable status s insufficient when a .gitatributes file
 // is present. Because Github does not support custom merge drivers, e.g. `merge=union` from .gitattributes, merging
 // using a git client that does support custom merge drivers is the only way to tell whether a branch is truly mergable.
-func tryMerge(pr GithubPullRequest) bool {
+func tryMerge(pr GithubPullRequest) (success bool) {
+
+	log.Println("Trying to merge")
 
 	g := services.git()
 
 	// set the the current branch
 	err := g.Checkout(string(pr.BaseRefName))
 	if err != nil {
-		return false
+		log.Printf("Error checking out base ref: %v", err)
+		return
 	}
 
 	origBranchRef := g.CurrentRefName()
 
-	err = g.Merge(fmt.Sprintf("origin/%s", string(pr.HeadRefName)))
+	mergeRef := fmt.Sprintf("origin/%s", string(pr.HeadRefName))
+
+	log.Printf("Merging '%s' into '%s'", mergeRef, origBranchRef)
+
+	err = g.Merge(mergeRef)
 	if err != nil {
-		return false
+		log.Printf("Error trying to merge: %v", err)
+		return
 	}
 
 	//reset HEAD back to the HEAD prior to merging
 	err = g.Reset(origBranchRef, "--hard")
+	if err != nil {
+		log.Printf("Unable to reset head: %v", err)
+		return
+	}
 
-	return err == nil
+	success = true
+
+	log.Println("Successfully merged")
+
+	return
 }
 
 // gitProvider is an interface for performing various Git operations

@@ -8,9 +8,9 @@ import (
 
 func TestServiceInitialization(t *testing.T) {
 
-	config.GlobalEnable("jira")
-	config.GlobalSet("jira", "user", "foo")
-	config.GlobalSet("jira", "host", "host.dev")
+	config.GlobalEnable(config.Jira)
+	config.GlobalSet(config.JiraUser, "foo")
+	config.GlobalSet(config.JiraHost, "host.dev")
 
 	config.SetEnv("JIRA_API_TOKEN", "bar")
 

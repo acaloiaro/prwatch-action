@@ -94,17 +94,22 @@ func ListPulls(client GithubQueryer) (pulls []GithubPullRequest, err error) {
 // hasConflict determines whether a pull request has a merge conflict
 func hasConflict(pr GithubPullRequest) bool {
 
+	log.Println("Github's mergeable state?", pr.Mergeable)
+
 	if pr.Mergeable == githubv4.MergeableStateUnknown {
-		log.Println("Unable to determine pull request's mergable state. Consider increasing DUAL_PASS_WAIT_DURATION " +
+		log.Println("Unable to determine pull request's mergable state. Consider increasing config.yml: dual_pass.wait_duration " +
 			"to give Github more time to calculate mergable state.")
+		return false
 	}
 
 	if pr.Mergeable != githubv4.MergeableStateConflicting {
+		log.Println("Not conflicinting")
 		return false
 	}
 
 	// when a pr's mergable state is conflicting and no .gitattributes exists, there is no chance it is mergeable
 	if !services.files().Exists(".gitattributes") {
+		log.Println("No git attributes")
 		return true
 	}
 
@@ -113,16 +118,16 @@ func hasConflict(pr GithubPullRequest) bool {
 
 // IssueID determines the "issue" associated with a pull request
 func IssueID(pr GithubPullRequest) (issueID string, ok bool) {
+
 	if len(string(pr.BodyText)) == 0 {
-		ok = false
 		return
 	}
 
-	// TODO: Make project-issue pattern more configurable
 	// TODO: Decouple IssueId from Jira settings
-	re := regexp.MustCompile(fmt.Sprintf("%s-\\d*", config.GetString("jira", "project_name")))
+	re := regexp.MustCompile(fmt.Sprintf("%s-\\d*", config.GetString(config.JiraProjectName)))
 	issueID = re.FindString(string(pr.BodyText))
 	ok = issueID != ""
+
 	return
 }
 

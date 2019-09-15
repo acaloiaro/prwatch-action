@@ -8,6 +8,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	DualPass             = "settings.dual_pass.enabled"
+	DualPassWaitDuration = "settings.dual_pass.wait_duration"
+	IssueComments        = "settings.issues.enable_comment"
+	IssueTransitions     = "settings.issues.enable_transition"
+	IssueConflictStatus  = "settings.issues.conflict_status"
+	Jira                 = "settings.jira.enabled"
+	JiraHost             = "settings.jira.host"
+	JiraProjectName      = "settings.jira.project_name"
+	JiraUser             = "settings.jira.user"
+)
+
 func Reset() {
 	viper.Reset()
 }
@@ -15,9 +27,9 @@ func Reset() {
 func Initialize() {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
 	viper.AddConfigPath("./github-actions/prwatch-action/")
 	viper.AddConfigPath("../github-actions/prwatch-action/")
+	viper.AddConfigPath("../../github-actions/prwatch-action/")
 
 	viper.AutomaticEnv()
 
@@ -28,16 +40,23 @@ func Initialize() {
 
 }
 
-func GlobalDisable(group string) {
-	viper.Set(globalSettingName(group, "enabled"), false)
+func GlobalDisable(setting string) {
+
+	viper.Set(setting, false)
 }
 
-func GlobalEnable(settingGroup string) {
-	viper.Set(globalSettingName(settingGroup, "enabled"), true)
+func GlobalEnable(setting string) {
+
+	viper.Set(setting, true)
 }
 
-func GlobalSet(group, setting, value string) {
-	viper.Set(globalSettingName(group, setting), value)
+func GlobalSet(setting, value string) {
+
+	viper.Set(setting, value)
+}
+
+func GlobalUnset(setting string) {
+	viper.Set(setting, nil)
 }
 
 func SetEnv(envVar, value string) {
@@ -45,84 +64,57 @@ func SetEnv(envVar, value string) {
 }
 
 func GetEnv(envVar string) string {
-	log.Println("Fetching env var", envVar)
-	val := viper.GetString(envVar)
-	log.Println("got value:", val)
-	return val
+	return viper.GetString(envVar)
 }
 
 func UserDisable(user, setting string) {
-	viper.Set(userSettingName(user, setting, "enabled"), false)
+
+	viper.Set(userSettingName(user, setting), false)
 }
 
 func UserEnable(user, setting string) {
-	viper.Set(userSettingName(user, setting, "enabled"), true)
+
+	viper.Set(userSettingName(user, setting), true)
 }
 
-func GetInt(key string) int {
-	return viper.GetInt(key)
+func GetString(setting string) string {
+
+	return viper.GetString(setting)
 }
 
-func GetString(group, setting string) string {
-	if SettingEnabled(group) {
-		return viper.GetString(globalSettingName(group, setting))
+func GetBool(setting string) bool {
+
+	log.Println("Getting", setting)
+	return viper.GetBool(setting)
+}
+
+func GetDuration(setting string) time.Duration {
+
+	return viper.GetDuration(setting)
+}
+
+func IsSet(setting string) bool {
+
+	return viper.IsSet(setting)
+}
+
+func SettingEnabled(setting string) bool {
+
+	return viper.GetBool(setting)
+}
+
+func UserSettingEnabled(user, setting string) bool {
+
+	userSetting := userSettingName(user, setting)
+
+	// check if it's configured globally first, superceding user settings
+	if IsSet(setting) {
+		return SettingEnabled(setting)
 	}
 
-	return ""
+	return viper.GetBool(userSetting)
 }
 
-func GetBool(key string) bool {
-	return viper.GetBool(key)
-}
-
-func GetDuration(group, setting string) time.Duration {
-	return viper.GetDuration(globalSettingName(group, setting))
-}
-
-func IsSetGlobal(group, setting string) bool {
-	return viper.IsSet(globalSettingName(group, setting))
-}
-
-func SettingEnabled(query ...string) bool {
-	if len(query) == 1 {
-
-		setting := query[0]
-
-		return viper.GetBool(globalSettingName(setting, "enabled"))
-
-	} else if len(query) == 2 {
-
-		user := query[0]
-		setting := query[1]
-
-		// check if it's disabled globally first, superceding user settings
-		if !SettingEnabled(setting) {
-			return false
-		}
-
-		full := userSettingName(user, setting, "enabled")
-		log.Printf("User: %s, setting: %s, fqsn: %s", user, setting, full)
-		return viper.GetBool(full)
-	}
-
-	return false
-}
-
-func globalSettingName(group, setting string) string {
-	return fmt.Sprintf("settings.%s.%s", group, setting)
-}
-
-func userSettingName(user, group, setting string) string {
-	return fmt.Sprintf("users.%s.settings.%s.%s", user, group, setting)
-}
-
-func parseDuration(durationString, configVarName string) (duration time.Duration) {
-	var err error
-
-	duration, err = time.ParseDuration(durationString)
-	if err != nil {
-		duration = time.Duration(0 * time.Second)
-	}
-
-	return
+func userSettingName(user, setting string) string {
+	return fmt.Sprintf("users.%s.%s", user, setting)
 }

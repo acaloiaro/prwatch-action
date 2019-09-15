@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/acaloiaro/prwatch/internal/config"
+	config "github.com/acaloiaro/prwatch/internal/config"
 	jira "github.com/andygrunwald/go-jira"
 )
 
@@ -24,7 +24,7 @@ func newJiraIssueProvider(c *jira.Client) issueProvider {
 // CommentIssue comments on jira issues with a pre-defined comment
 func (j *jiraIssueProvider) CommentIssue(i issue) (ok bool) {
 
-	if !config.SettingEnabled(i.Owner, "issue_comments") {
+	if !config.UserSettingEnabled(i.Owner, config.IssueComments) {
 		return
 	}
 
@@ -34,7 +34,7 @@ func (j *jiraIssueProvider) CommentIssue(i issue) (ok bool) {
 		return
 	}
 
-	transitionName := config.GetString("issues", "conflict_status")
+	transitionName := config.GetString(config.IssueConflictStatus)
 	_, _, err = j.c.Issue.AddComment(i.ID, j.genComment(jiraIssue, transitionName))
 	if err != nil {
 		log.Printf("unable to leave comment on issue: '%s': %v", i.ID, err)
@@ -53,15 +53,14 @@ func (j *jiraIssueProvider) jiraIssueFor(i issue) *jira.Issue {
 	}
 }
 
-// TransitionIssue transitions an issue's status to the one specified by the NEW_ISSUE_STATUS environment variable.
+// TransitionIssue transitions an issue's status to the one specified by settings.issues.conflict_status
 func (j *jiraIssueProvider) TransitionIssue(i issue) (ok bool) {
 
-	// TODO: Use a constant for this setting name
-	if !config.SettingEnabled(i.Owner, "transition_issues") {
+	if !config.UserSettingEnabled(i.Owner, config.IssueTransitions) {
 		return
 	}
 
-	transitionName := config.GetString("issues", "conflict_status")
+	transitionName := config.GetString(config.IssueConflictStatus)
 	if transitionName == "" {
 		log.Fatal("Please set in config.yaml: config.issues.conflict_status. e.g. 'In Progress'")
 	}
@@ -101,13 +100,13 @@ func (j *jiraIssueProvider) TransitionIssue(i issue) (ok bool) {
 }
 
 func newJiraClient() *jira.Client {
-	if !config.SettingEnabled("jira") {
-		log.Fatal("Jira must be enabled in config.yaml to create a jira client")
+	if !config.GetBool(config.Jira) {
+		log.Fatalf("Enable jira in config.yaml: %s", config.Jira)
 	}
 
-	jiraUser := config.GetString("jira", "user")
+	jiraUser := config.GetString(config.JiraUser)
 	if jiraUser == "" {
-		log.Fatal("Please set in config.yaml: settings.jira.user")
+		log.Fatalf("Please set in config.yaml: %s", config.JiraUser)
 	}
 
 	apiToken := config.GetEnv("JIRA_API_TOKEN")
@@ -115,9 +114,9 @@ func newJiraClient() *jira.Client {
 		log.Fatal("Please set JIRA_API_TOKEN environment variable with your Jira API token.")
 	}
 
-	jiraHost := config.GetString("jira", "host")
+	jiraHost := config.GetString(config.JiraHost)
 	if jiraHost == "" {
-		log.Fatal("Please set in config.yaml: settings.jira.host")
+		log.Fatalf("Please set in config.yaml: %s", config.JiraHost)
 	}
 
 	url := fmt.Sprintf("https://%s:%s@%s", url.QueryEscape(jiraUser), apiToken, jiraHost)

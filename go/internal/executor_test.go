@@ -36,8 +36,8 @@ func TestExecutorExecute(t *testing.T) {
 
 	config.SetEnv("GITHUB_REPOSITORY", "acaloiaro/isok")
 
-	config.GlobalEnable("dual_pass")
-	config.GlobalSet("dual_pass", "wait_duration", "1ms")
+	config.GlobalEnable(config.DualPass)
+	config.GlobalSet(config.DualPassWaitDuration, "1ms")
 
 	st := &testExecutionPlan{
 		passCount:    0,
@@ -53,7 +53,7 @@ func TestExecutorExecute(t *testing.T) {
 	}
 	st.f = secondPass
 
-	// The first "pass" occurrs when the first ListPulls call is issued to the github client
+	// The first pass occurrs when the first ListPulls call is issued to the github client
 	firstPass := func(query interface{}, v map[string]interface{}) error {
 		st.passCount = 1
 		st.firstPassFinished = time.Now()
