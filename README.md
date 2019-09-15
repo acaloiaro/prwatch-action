@@ -97,8 +97,8 @@ If a global setting is unset globally, but on for a user, then it is still on fo
 | settings.jira.host | The hostname of your Jira instance | string | |
 | settings.jira.project_name | The name of the Jira project associated with your repository | string | |
 | settings.jira.user | The "bot" user to use when transitioning and commenting on issues | string | |
-| users.<github username>.settings.issues.enable_comment | Enable issue comments for a user | bool | |
-| users.<github username>.settings.issues.enable_transition | Enable issue transitions for a user | bool | |
+| users.`<github username>`.settings.issues.enable_comment | Enable issue comments for a user | bool | |
+| users.`<github username>`.settings.issues.enable_transition | Enable issue transitions for a user | bool | |
 
 ## Secrets
 `GITHUB_TOKEN`: _It is not necessary to set this, as it is available to all Github Actions_
