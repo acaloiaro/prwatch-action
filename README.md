@@ -30,7 +30,7 @@ section](#configuration_file) for how to enable dual-pass mode when triggering t
 2. Add `./github-actions/prwatch-action/config.yaml` to your repository. [Example
    configuration](https://github.com/acaloiaro/prwatch-action/tree/master/examples/config.yaml)
 
-## Run on Push 
+## Run on Push
 ```yaml
 ---
 'on':
@@ -80,6 +80,12 @@ jobs:
 This action is configured with a single yaml file. The configuration file lives in your repository at
 `./github-actions/prwatch-action/config.yaml`. See [examples](https://github.com/acaloiaro/prwatch-action/tree/master/examples) for an example `config.yaml`.
 
+User-specific settings are superseded by their global counterparts. i.e. if
+`users.foobar.settings.issues.enable_transition` is _on_ for `foobar`, but _off_ globally, the feature will be turned
+off for `foobar`.
+
+If a global setting is unset globally, but on for a user, then it is still on for that user.
+
 | key           | description                                                       | type | default |
 | ------------- |:-----------------------------------------------------------------:|:----:|:--------|
 | settings.dual_pass.enabled  | Dual-pass mode allows this action to be triggered on 'push' to a target branch while allowing Github time to recalculate the mergeability of PRs | bool | true |
@@ -91,6 +97,8 @@ This action is configured with a single yaml file. The configuration file lives 
 | settings.jira.host | The hostname of your Jira instance | string | |
 | settings.jira.project_name | The name of the Jira project associated with your repository | string | |
 | settings.jira.user | The "bot" user to use when transitioning and commenting on issues | string | |
+| users.<github username>.settings.issues.enable_comment | Enable issue comments for a user | bool | |
+| users.<github username>.settings.issues.enable_transition | Enable issue transitions for a user | bool | |
 
 ## Secrets
 `GITHUB_TOKEN`: _It is not necessary to set this, as it is available to all Github Actions_
