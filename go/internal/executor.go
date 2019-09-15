@@ -28,7 +28,7 @@ func NewExecutor(s executionPlan) *executor {
 // The second phase is to determine the actual mergability of all open pull requests.
 func (e *executor) Execute() error {
 
-	if config.SettingEnabled("dual_pass") {
+	if config.SettingEnabled(config.DualPass) {
 		timer := e.executionPlan.DualPassTimer()
 
 		// List open pull requests to trigger a refresh of Github's mergability status
@@ -94,6 +94,8 @@ func (e *DefaultExecutionPlan) Execute() error {
 
 			services.issues().TransitionIssue(i)
 			services.issues().CommentIssue(i)
+		} else {
+			log.Printf("Pull request is not conflicitng: %s", pull.URL)
 		}
 	}
 
@@ -115,6 +117,6 @@ func (e DefaultExecutionPlan) DualPassTimer() (timer *time.Timer) {
 }
 
 func dualPassInterval() time.Duration {
-	d := config.GetDuration("dual_pass", "wait_duration")
+	d := config.GetDuration(config.DualPassWaitDuration)
 	return d
 }

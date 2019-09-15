@@ -12,94 +12,92 @@ import (
 
 func TestInitialize(t *testing.T) {
 
-	defer os.RemoveAll("./github-actions")
+	configPath := "./github-actions/prwatch-action/config.yaml"
+	defer os.Remove(configPath)
 
-	// Make sure the config file can be read from various locations to simplify local dev
-	configPath := "./config.yaml"
-	writeConfig(configPath)
-
-	Initialize()
-
-	if !GetBool("settings.issue_transitions.enabled") {
-		t.Error("configuration file should have enabled issue transitions")
-	}
-
-	os.Remove(configPath)
-	Reset()
-
-	configPath = "./github-actions/prwatch-action/config.yaml"
-	writeConfig(configPath)
-
-	Initialize()
-
-	if !GetBool("settings.issue_transitions.enabled") {
-		t.Error("configuration file should have enabled issue transitions")
-	}
-}
-
-func TestSettingEnabled(t *testing.T) {
-	configPath := "./config.yaml"
 	writeConfig(configPath)
 
 	Initialize()
 
 	// global settings
 
-	setting := "issue_comments"
-	if SettingEnabled(setting) {
-		t.Errorf("global setting '%s' should be disabled", setting)
+	if SettingEnabled(IssueComments) {
+		t.Errorf("global setting '%s' should be disabled", IssueComments)
 	}
 
-	setting = "issue_transitions"
-	if !SettingEnabled(setting) {
-		t.Errorf("global setting '%s' should be enabled", setting)
+	if !SettingEnabled(IssueTransitions) {
+		t.Errorf("global setting '%s' should be enabled", IssueTransitions)
+	}
+
+	if UserSettingEnabled("acaloiaro", IssueComments) {
+		t.Errorf("setting should be disabled for acaloiaro: %s", IssueComments)
+	}
+
+	if !UserSettingEnabled("acaloiaro", IssueTransitions) {
+		t.Errorf("setting should be enabled for acaloiaro: %s", IssueTransitions)
 	}
 
 	// user-specific settings
 
-	setting = "issue_comments"
-	if SettingEnabled("acaloiaro", setting) {
-		t.Errorf("setting should be disabled for acaloiaro: %s", setting)
-	}
+	Reset()
 
-	setting = "issue_transitions"
-	if SettingEnabled("acaloiaro", setting) {
-		t.Errorf("setting should be disabled for acaloiaro: %s", setting)
-	}
-
-	if SettingEnabled("foobar", "issue_transitions") {
-		t.Error("user-specific setting should not be enabled for foobar")
-	}
-
-	UserEnable("foobar", "issue_transitions")
-	if !SettingEnabled("foobar", "issue_transitions") {
+	UserEnable("foobar", IssueTransitions)
+	if !UserSettingEnabled("foobar", IssueTransitions) {
 		t.Error("user-specific setting should be enabled for foobar")
 	}
 
-	GlobalDisable("issue_transitions")
-	if SettingEnabled("foobar", "issue_transitions") {
+	UserDisable("foobar", IssueTransitions)
+	if UserSettingEnabled("foobar", IssueTransitions) {
 		t.Error("user-specific setting should be disabled for foobar")
 	}
+
+	UserEnable("foobar", IssueComments)
+	if !UserSettingEnabled("foobar", IssueComments) {
+		t.Error("user-specific setting should be enabled for foobar")
+	}
+
+	UserDisable("foobar", IssueComments)
+	if UserSettingEnabled("foobar", IssueComments) {
+		t.Error("user-specific setting should be disabled for foobar")
+	}
+
+	GlobalDisable(IssueComments)
+	UserEnable("foobar", IssueComments)
+	if UserSettingEnabled("foobar", IssueComments) {
+		t.Error("user-specific setting should be overridden by global setting")
+	}
+
+	Reset()
+
+	GlobalDisable(IssueTransitions)
+	UserEnable("foobar", IssueTransitions)
+	if UserSettingEnabled("foobar", IssueTransitions) {
+		t.Error("user-specific setting should be overridden by global setting")
+	}
+
 }
 
 func writeConfig(path string) {
 	var yaml = []byte(`---
 settings:
-  issue_transitions:
-    enabled: true
-  issue_comments:
-    enabled: false
   dual_pass:
     enabled: true
-    wait_duration: 1s
-
+    wait_duration: 10s
+  jira:
+    enabled: true
+    user: jira-bot
+    host: greenhouseio.atlassian.net
+    project_name: GREEN
+  issues:
+    conflict_status: In Progress
+    enable_comment: false
+    enable_transition: true
 users:
   acaloiaro:
     settings:
-      issue_transitions:
-        enabled: false
-      issue_comments:
-        enabled: true
+      issues:
+        enable_comment: true
+        enable_transition: true
 `)
 
 	viper.SetConfigType("yaml")

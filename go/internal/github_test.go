@@ -125,8 +125,8 @@ func TestListPulls(t *testing.T) {
 
 func TestIssueId(t *testing.T) {
 
-	config.GlobalEnable("jira")
-	config.GlobalSet("jira", "project_name", "FOO")
+	config.GlobalEnable(config.Jira)
+	config.GlobalSet(config.JiraProjectName, "FOO")
 
 	pr := GithubPullRequest{
 		BodyText: "Issue url is https://foobar.atlassian.net/browse/FOO-1234",
