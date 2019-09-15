@@ -2,17 +2,17 @@
 
 A Github action for monitoring pull requests on a repository.
 
-Current features
-- Monitor the merability of all pull requests against master
-- Transition Jira cards associated with in-conflict pull requests to a new status defined by `CONFLICT_ISSUE_STATUS`
-- Comment on transitioned issues to let assignees know their cards have been "pushed back" due to conflicts in the pull
-  request.
+Supported features
+- Monitor the mergeability of all open pull requests in your repository
+- When pull requests have conflicts, comment on them and `@mention` the owner
+- When pull requests have conflicts, transition them to new statuses, e.g. 'To Be Shipped' -> 'In Progress'
+- Configure globally for the entire repository or on a per-user basis
 
 # Usage
 
-To use this action, your Github Pull Requests must include in their description their associated issue tracker ID. E.g.
-if your Jira project name is `FOO` and the issue associated with your pull request is `1234`, then your Pull Request
-must include `FOO-1234` somewhere in its description.
+To use this action, your Github Pull Requests must include in their description an associated issue tracker issue ID.
+E.g. if your Jira project name is `FOO` and the issue associated with your pull request is `1234`, then your Pull
+Request must include `FOO-1234` somewhere in its description.
 
 ## Example Pull Request Description
 ```
@@ -20,6 +20,11 @@ This PR fixes the Thinger for FOO-1234
 ```
 
 ## Run on merge with master
+
+This action performs best when it is configured `on.push` to your mainline branch. The idea is to trigger a mergeability
+check when feature branches merge upstream. See [configuration the section](#configuration_file) for how to enable
+dual-pass mode when triggering this action `on.push`.
+
 ```yaml
 ---
 'on':
@@ -59,7 +64,7 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 ```
 
-## Configuration File
+## <a name="configuration_file"></a>Configuration File
 
 This action is configured with a single yaml file. The configuration file lives in your repository at
 `./github-actions/prwatch-action/config.yaml`. See [examples](https://github.com/acaloiaro/prwatch-action/tree/master/examples) for an example `config.yaml`.
