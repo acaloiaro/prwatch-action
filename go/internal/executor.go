@@ -92,8 +92,8 @@ func (e *DefaultExecutionPlan) Execute() error {
 
 			i := issue{ID: issueID, Owner: string(pull.Author.Login)}
 
-			services.issues().TransitionIssue(i)
 			services.issues().CommentIssue(i)
+			services.issues().TransitionIssue(i)
 		} else {
 			log.Printf("pull request is not conflicitng: %s", pull.URL)
 		}

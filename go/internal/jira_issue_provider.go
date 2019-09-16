@@ -37,8 +37,13 @@ func (j *jiraIssueProvider) CommentIssue(i issue) (ok bool) {
 		return
 	}
 
-	transitionName := config.GetString(config.IssueConflictStatus)
-	_, _, err = j.c.Issue.AddComment(i.ID, j.genComment(jiraIssue, transitionName))
+	comment := j.genComment(jiraIssue)
+	if comment == nil {
+		ok = true
+		return
+	}
+
+	_, _, err = j.c.Issue.AddComment(i.ID, comment)
 	if err != nil {
 		log.Printf("unable to leave comment on issue: '%s': %v", i.ID, err)
 	}
@@ -151,8 +156,22 @@ func (j *jiraIssueProvider) shouldTransition(issue *jira.Issue, newStatus string
 	return true
 }
 
-func (j *jiraIssueProvider) genComment(issue *jira.Issue, newStatus string) *jira.Comment {
+func (j *jiraIssueProvider) genComment(issue *jira.Issue) *jira.Comment {
+	conflictStatus := config.GetString(config.IssueConflictStatus)
+
+	// only comment on issues when they are not in the correct status for in-conflict PRs
+	statusOk := issue.Fields.Status.Name == conflictStatus
+	if statusOk {
+		return nil
+	}
+
+	var statusChangeMsg string
+	statusChanging := issue.Fields.Status.Name != conflictStatus && config.SettingEnabled(config.IssueTransitions)
+	if statusChanging {
+		statusChangeMsg = fmt.Sprintf("This issue's status has changed to: '%s'.", conflictStatus)
+	}
+
 	return &jira.Comment{
-		Body: fmt.Sprintf("[~%s]: This card (%s) has been sent back to '%s' because its Pull Request has a merge conflict.", issue.Fields.Assignee.Key, issue.Key, newStatus),
+		Body: fmt.Sprintf("[~%s]: This issue's pull request has a merge conflict. %s", issue.Fields.Assignee.Key, statusChangeMsg),
 	}
 }
