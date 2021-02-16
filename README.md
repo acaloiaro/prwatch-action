@@ -1,4 +1,6 @@
-# prwatch-action
+# prwatch-action [ archived ] 
+
+## This repo is archived. The functionality it provides is largely provided by Github's new "real-time alerts". Go to https://github.com/settings/reminders and enable real-time alerts, and check "Your PR has merge conflicts". The code will remain on Github for future refernce. 
 
 A Github action for monitoring pull requests on a repository.
 
